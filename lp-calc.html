@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>LP Calculator</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			background-color: #f4f4f4;
+			color: #333;
+			margin: 0;
+			padding: 0;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			min-height: 100vh;
+		}
+		h1 {
+			color: #4CAF50;
+		}
+		p {
+			margin-bottom: 20px;
+			font-size: 1.1em;
+		}
+		table {
+			border-collapse: collapse;
+			width: 80%;
+			max-width: 600px;
+			background: white;
+			box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+			border-radius: 8px;
+			overflow: hidden;
+			margin-bottom: 20px;
+		}
+		th, td {
+			padding: 15px;
+			text-align: left;
+		}
+		th {
+			background-color: #4CAF50;
+			color: white;
+			text-transform: uppercase;
+			font-size: 0.9em;
+		}
+		td {
+			border-bottom: 1px solid #ddd;
+		}
+		td input[type=text] {
+			width: 100%;
+			padding: 10px;
+			border: 1px solid #ddd;
+			border-radius: 4px;
+			font-size: 1em;
+		}
+		td input[type=submit] {
+			background-color: #4CAF50;
+			color: white;
+			border: none;
+			padding: 10px 20px;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 1em;
+		}
+		td input[type=submit]:hover {
+			background-color: #45a049;
+		}
+		#result-table {
+			width: 100%;
+			max-height: 250px; /* Adjust height as needed */
+			overflow-y: auto; /* Enable vertical scrolling */
+			display: table;
+			margin-top: 20px;
+		}
+		#result-table thead {
+			display: table-header-group;
+		}
+		#result-table tbody {
+			display: block;
+			max-height: 40vh; /* Adjust this value as needed to fit within max-height */
+			overflow-y: auto;
+		}
+		#result-table th, #result-table td {
+			display: table-cell;
+			padding: 15px;
+		}
+		#result-table tr {
+			display: table;
+			width: 100%;
+			table-layout: fixed;
+		}
+
+		.tooltip {
+			position: relative;
+			display: inline-block;
+			cursor: pointer;
+			color: #4CAF50;
+		}
+		.tooltip .tooltiptext {
+			visibility: hidden;
+			width: 200px;
+			background-color: #4CAF50;
+			color: #fff;
+			text-align: center;
+			border-radius: 5px;
+			padding: 5px 0;
+			position: absolute;
+			z-index: 1;
+			bottom: 125%;
+			left: 50%;
+			margin-left: -100px;
+			opacity: 0;
+			transition: opacity 0.3s;
+		}
+		.tooltip:hover .tooltiptext {
+			visibility: visible;
+			opacity: 1;
+		}
+		.advanced-options {
+			margin-top: 10px;
+		}
+		.advanced-options .collapsible {
+			background-color: #4CAF50;
+			color: white;
+			cursor: pointer;
+			padding: 10px;
+			width: 100%;
+			border: none;
+			text-align: left;
+			outline: none;
+			font-size: 1em;
+			border-radius: 4px;
+		}
+		.advanced-options .content {
+			padding: 10px;
+			display: none;
+			background-color: #f9f9f9;
+			border: 1px solid #ddd;
+			border-radius: 4px;
+		}
+	</style>
+	<script>
+		function generateRange(event) {
+			event.preventDefault();
+
+			const entryPrice = parseFloat(document.getElementById('entry-price').value);
+			const entryAmount = parseFloat(document.getElementById('entry-amt').value);
+			const targetProfit = parseFloat(document.getElementById('profit').value);
+			const tick = parseFloat(document.getElementById('tick').value) || 5;
+			const lowerBoundStart = parseFloat(document.getElementById('lowerbound').value) || entryPrice-10;
+			const results = parseInt(document.getElementById('results').value) || 5;
+
+			if (isNaN(entryPrice) || isNaN(entryAmount) || isNaN(targetProfit)) {
+				alert("Please enter valid numbers for all fields.");
+				return;
+			}
+
+			const resultTableBody = document.getElementById('result-table-body');
+			resultTableBody.innerHTML = '';
+
+			const totalValue = entryPrice * entryAmount;
+			const desiredTotal = totalValue + targetProfit;
+
+			for (let i = 0; i < lowerBoundStart + (results * tick); i += tick) {
+				const lowerBound = lowerBoundStart + i;
+				const upperBound = (targetProfit / (entryAmount/entryPrice) + entryPrice) * 2 - lowerBound;
+				if (upperBound < lowerBound) { break }
+				const impermanentLoss = targetProfit - (upperBound * (entryAmount/entryPrice) - entryAmount);
+
+				const row = document.createElement('tr');
+				const lowerBoundCell = document.createElement('td');
+				const upperBoundCell = document.createElement('td');
+				const impermanentLossCell = document.createElement('td');
+
+				lowerBoundCell.innerText = lowerBound.toFixed(2);
+				upperBoundCell.innerText = upperBound.toFixed(2);
+				impermanentLossCell.innerHTML = impermanentLoss.toFixed(2);
+
+				row.appendChild(lowerBoundCell);
+				row.appendChild(upperBoundCell);
+				row.appendChild(impermanentLossCell);
+				resultTableBody.appendChild(row);
+			}
+
+			const resultTable = document.getElementById('result-table');
+			resultTable.style.display = 'table';
+		}
+
+		document.addEventListener("DOMContentLoaded", function() {
+			const coll = document.getElementsByClassName("collapsible");
+			for (let i = 0; i < coll.length; i++) {
+				coll[i].addEventListener("click", function() {
+					this.classList.toggle("active");
+					const content = this.nextElementSibling;
+					if (content.style.display === "block") {
+						content.style.display = "none";
+					} else {
+						content.style.display = "block";
+					}
+				});
+			}
+		});
+	</script>
+</head>
+<body>
+	<h1>LP CALCULATOR</h1>
+	<p>Helping you decide your ideal LP range to exit a position with your target profit amount.</p>
+	<table>
+		<thead>
+			<tr>
+				<th>Coin Entry Price</th>
+				<th>Entry Amount</th>
+				<th>Target Profit</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<form id="calculate" onsubmit="generateRange(event)">
+					<td>
+						<input type="text" name="entry-price" id="entry-price" />
+					</td>
+					<td>
+						<input type="text" name="entry-amt" id="entry-amt" />
+					</td>
+					<td>
+						<input type="text" name="profit" id="profit" />
+					</td>
+					<td><input type="submit" value="Generate"></td>
+				</form>
+			</tr>
+		</tbody>
+	</table>
+	<div class="advanced-options">
+		<button type="button" class="collapsible">Advanced Options</button>
+		<div class="content">
+			<p>Tick: <input type="text" id="tick" placeholder="Default: 5"></p>
+			<p>Lower Bound: <input type="text" id="lowerbound" placeholder="Default: Entry Price -10"></p>
+			<p>Results: <input type="text" id="results" placeholder="Default: 5"></p>
+		</div>
+	</div>
+	<table id="result-table">
+		<thead>
+			<tr>
+				<th>Lower Bound</th>
+				<th>Upper Bound</th>
+				<th>Impermanent Loss</th>
+			</tr>
+		</thead>
+		<tbody id="result-table-body">
+		</tbody>
+	</table>
+</body>
+</html>
+
